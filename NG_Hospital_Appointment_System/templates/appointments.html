@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Appointments | MediSchedule{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex-between">
+    <div>
+        <h1>Hospital Appointments Registry</h1>
+        <p class="subtitle">View, manage, reschedule, or cancel patient bookings.</p>
+    </div>
+    <a href="{{ url_for('home') }}" class="btn btn-primary">+ New Appointment</a>
+</div>
+
+<div class="card table-card">
+    {% if appointments %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Patient Details</th>
+                        <th>Doctor & Specialty</th>
+                        <th>Date & Time</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appt in appointments %}
+                        <tr>
+                            <td class="text-muted">#{{ appt.id }}</td>
+                            <td>
+                                <strong>{{ appt.patient_name }}</strong><br>
+                                <small class="text-muted">📞 {{ appt.patient_phone }}</small>
+                            </td>
+                            <td>
+                                <strong>{{ appt.doctor_name }}</strong><br>
+                                <span class="badge badge-info">{{ appt.specialization }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ appt.appointment_date }}</strong><br>
+                                <small class="text-muted">⏰ {{ appt.time_slot }}</small>
+                            </td>
+                            <td>
+                                {% if appt.status.value == 'SCHEDULED' %}
+                                    <span class="badge badge-success">Scheduled</span>
+                                {% elif appt.status.value == 'RESCHEDULED' %}
+                                    <span class="badge badge-warning">Rescheduled</span>
+                                {% elif appt.status.value == 'CANCELLED' %}
+                                    <span class="badge badge-danger">Cancelled</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">{{ appt.status.value }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if appt.status.value != 'CANCELLED' %}
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-outline" onclick="openRescheduleModal('{{ appt.id }}', '{{ appt.doctor_id }}', '{{ appt.appointment_date }}', '{{ appt.time_slot }}')">Reschedule</button>
+                                        <form action="{{ url_for('cancel', appointment_id=appt.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this appointment?');" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted italic">No actions available</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📅</div>
+            <h3>No Appointments Found</h3>
+            <p>There are currently no scheduled appointments in the system.</p>
+            <a href="{{ url_for('home') }}" class="btn btn-primary">Book the First Appointment</a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Reschedule Modal -->
+<div id="rescheduleModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Reschedule Appointment</h3>
+            <button class="modal-close" onclick="closeRescheduleModal()">&times;</button>
+        </div>
+        <form id="rescheduleForm" method="POST">
+            <div class="form-group">
+                <label for="new_date">Select New Date</label>
+                <input type="date" id="new_date" name="new_date" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="new_time_slot">Select New Time Slot</label>
+                <select id="new_time_slot" name="new_time_slot" class="form-control" required>
+                    <option value="">-- Choose Time Slot --</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeRescheduleModal()">Close</button>
+                <button type="submit" class="btn btn-primary">Confirm Reschedule</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentDoctorId = null;
+
+    function openRescheduleModal(appointmentId, doctorId, currentDate, currentSlot) {
+        currentDoctorId = doctorId;
+        const modal = document.getElementById('rescheduleModal');
+        const form = document.getElementById('rescheduleForm');
+        form.action = `/reschedule/${appointmentId}`;
+
+        const dateInput = document.getElementById('new_date');
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.min = today;
+        dateInput.value = currentDate;
+
+        modal.style.display = 'flex';
+        loadRescheduleSlots();
+    }
+
+    function closeRescheduleModal() {
+        document.getElementById('rescheduleModal').style.display = 'none';
+    }
+
+    async function loadRescheduleSlots() {
+        const selectedDate = document.getElementById('new_date').value;
+        const slotSelect = document.getElementById('new_time_slot');
+
+        if (!currentDoctorId || !selectedDate) return;
+
+        try {
+            const response = await fetch(`/api/available-slots?doctor_id=${currentDoctorId}&appointment_date=${selectedDate}`);
+            const data = await response.json();
+
+            slotSelect.innerHTML = '';
+            if (data.available_slots && data.available_slots.length > 0) {
+                data.available_slots.forEach(slot => {
+                    const opt = document.createElement('option');
+                    opt.value = slot;
+                    opt.textContent = slot;
+                    slotSelect.appendChild(opt);
+                });
+            } else {
+                slotSelect.innerHTML = '<option value="">No open slots available</option>';
+            }
+        } catch (err) {
+            console.error('Error loading slots:', err);
+        }
+    }
+
+    document.getElementById('new_date').addEventListener('change', loadRescheduleSlots);
+</script>
+{% endblock %}

@@ -1,0 +1,25 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+    <h1>Our Medical Specialists & Departments (Node.js)</h1>
+    <p class="subtitle">Qualified doctors available for consultations across various specialized clinical departments.</p>
+</div>
+
+<div class="doctors-grid">
+    <% doctors.forEach(doctor => { %>
+        <div class="card doctor-card">
+            <div class="doctor-avatar">👨‍⚕️</div>
+            <div class="doctor-info">
+                <h3><%= doctor.name %></h3>
+                <p class="specialty"><%= doctor.specialization %></p>
+                <p class="department">🏥 <%= doctor.department %></p>
+                <p class="email">✉️ <%= doctor.contactEmail %></p>
+            </div>
+            <div class="doctor-action">
+                <a href="/" class="btn btn-outline btn-block">Book with <%= doctor.name.split(' ').slice(-1)[0] %></a>
+            </div>
+        </div>
+    <% }) %>
+</div>
+
+<%- include('partials/footer') %>

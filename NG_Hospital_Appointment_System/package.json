@@ -1,0 +1,25 @@
+{
+  "name": "hospital-appointment-system-nodejs",
+  "version": "1.0.0",
+  "description": "Hospital Appointment System - Clean Architecture & Readability Improvement in Node.js / Express & SQLite",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --experimental-sqlite server.js",
+    "dev": "node --experimental-sqlite --watch server.js",
+    "test": "node --experimental-sqlite --test tests/appointment_service.test.js"
+  },
+  "keywords": [
+    "clean-code",
+    "refactoring",
+    "hospital-system",
+    "nodejs",
+    "express",
+    "sqlite"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.21.2"
+  }
+}

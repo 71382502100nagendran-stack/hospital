@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Medical Specialists | MediSchedule{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Our Medical Specialists & Departments</h1>
+    <p class="subtitle">Qualified doctors available for consultations across various specialized clinical departments.</p>
+</div>
+
+<div class="doctors-grid">
+    {% for doctor in doctors %}
+        <div class="card doctor-card">
+            <div class="doctor-avatar">👨‍⚕️</div>
+            <div class="doctor-info">
+                <h3>{{ doctor.name }}</h3>
+                <p class="specialty">{{ doctor.specialization }}</p>
+                <p class="department">🏥 {{ doctor.department }}</p>
+                <p class="email">✉️ {{ doctor.contact_email }}</p>
+            </div>
+            <div class="doctor-action">
+                <a href="{{ url_for('home') }}" class="btn btn-outline btn-block">Book with {{ doctor.name.split(' ')[-1] }}</a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

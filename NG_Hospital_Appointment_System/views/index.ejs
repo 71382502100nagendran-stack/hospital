@@ -1,0 +1,140 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+    <h1>Book a Doctor Consultation (Node.js)</h1>
+    <p class="subtitle">Select a specialist, choose your preferred date and time, and confirm your appointment.</p>
+</div>
+
+<div class="grid-2-col">
+    <!-- Booking Form Card -->
+    <div class="card form-card">
+        <div class="card-header">
+            <h2>New Appointment Request</h2>
+        </div>
+        <form action="/book" method="POST" class="appointment-form" id="bookingForm">
+            <div class="form-group">
+                <label for="patient_name">Patient Full Name <span class="required">*</span></label>
+                <input type="text" id="patient_name" name="patient_name" class="form-control" placeholder="e.g. John Doe" required>
+            </div>
+
+            <div class="form-group">
+                <label for="patient_phone">Contact Phone Number <span class="required">*</span></label>
+                <input type="tel" id="patient_phone" name="patient_phone" class="form-control" placeholder="e.g. +1 234 567 8900" required>
+            </div>
+
+            <div class="form-group">
+                <label for="doctor_id">Select Doctor & Department <span class="required">*</span></label>
+                <select id="doctor_id" name="doctor_id" class="form-control" required>
+                    <option value="">-- Choose a Doctor --</option>
+                    <% doctors.forEach(doctor => { %>
+                        <option value="<%= doctor.id %>"><%= doctor.name %> — <%= doctor.specialization %> (<%= doctor.department %>)</option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label for="appointment_date">Appointment Date <span class="required">*</span></label>
+                    <input type="date" id="appointment_date" name="appointment_date" class="form-control" required>
+                </div>
+
+                <div class="form-group flex-1">
+                    <label for="time_slot">Available Time Slot <span class="required">*</span></label>
+                    <select id="time_slot" name="time_slot" class="form-control" required>
+                        <option value="">-- Select Date & Doctor First --</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Confirm Appointment Booking</button>
+        </form>
+    </div>
+
+    <!-- Quick Info & Recent Activity Card -->
+    <div class="info-sidebar">
+        <div class="card info-card">
+            <div class="card-header">
+                <h3>Node.js Clean Code Architecture</h3>
+            </div>
+            <ul class="feature-list">
+                <li>
+                    <strong>Intention-Revealing Naming:</strong> 
+                    <code>bookAppointment()</code> replaces legacy <code>chk2()</code>.
+                </li>
+                <li>
+                    <strong>Guard Clauses:</strong> 
+                    Flat, early validation eliminates callback/pyramid-of-doom nesting.
+                </li>
+                <li>
+                    <strong>Native Zero-Dependency SQLite:</strong> 
+                    Powered by Node.js native <code>node:sqlite</code> DatabaseSync module.
+                </li>
+                <li>
+                    <strong>Layered MVC Architecture:</strong> 
+                    Clean separation between Express routing, Service domain logic, and SQLite persistence.
+                </li>
+            </ul>
+        </div>
+
+        <div class="card stats-card">
+            <h3>Quick System Overview</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number"><%= doctors.length %></span>
+                    <span class="stat-label">Available Doctors</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number"><%= appointments.length %></span>
+                    <span class="stat-label">Total Bookings</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const dateInput = document.getElementById('appointment_date');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+    dateInput.value = today;
+
+    const doctorSelect = document.getElementById('doctor_id');
+    const timeSlotSelect = document.getElementById('time_slot');
+
+    async function loadAvailableSlots() {
+        const doctorId = doctorSelect.value;
+        const selectedDate = dateInput.value;
+
+        if (!doctorId || !selectedDate) {
+            timeSlotSelect.innerHTML = '<option value="">-- Select Date & Doctor First --</option>';
+            return;
+        }
+
+        timeSlotSelect.innerHTML = '<option value="">Loading slots...</option>';
+
+        try {
+            const response = await fetch(`/api/available-slots?doctor_id=${doctorId}&appointment_date=${selectedDate}`);
+            const data = await response.json();
+
+            timeSlotSelect.innerHTML = '';
+            if (data.available_slots && data.available_slots.length > 0) {
+                data.available_slots.forEach(slot => {
+                    const option = document.createElement('option');
+                    option.value = slot;
+                    option.textContent = slot;
+                    timeSlotSelect.appendChild(option);
+                });
+            } else {
+                timeSlotSelect.innerHTML = '<option value="">No available slots for this date</option>';
+            }
+        } catch (error) {
+            console.error('Error fetching slots:', error);
+            timeSlotSelect.innerHTML = '<option value="">Failed to load slots</option>';
+        }
+    }
+
+    doctorSelect.addEventListener('change', loadAvailableSlots);
+    dateInput.addEventListener('change', loadAvailableSlots);
+</script>
+
+<%- include('partials/footer') %>
